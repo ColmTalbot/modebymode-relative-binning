@@ -9,5 +9,6 @@ lal, lalsimulation (see below)
 
 python version 3.7.9
 
-The correct lal and lalsimulation packages (from Geraint Pratten's branch) can be installed with
+The correct lal and lalsimulation packages (from Geraint Pratten's branch) can be installed with:
+
 RUN git clone https://github.com/GeraintPratten/lalsuite_gp && LAL_INSTALL_PREFIX="/opt/conda" && cd lalsuite_gp  && ./00boot && ./configure --prefix=${LAL_INSTALL_PREFIX} --enable-swig-python --disable-lalstochastic --disable-lalframe --disable-lalmetaio --disable-lalburst --disable-lalinspiral --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps CFLAGS="-Wno-error" && make -j10 && make install
