@@ -1,1 +1,9 @@
-
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Leslie
+    given-names: Nathaniel
+    orcid: https://orcid.org/0000-0002-2582-1871
+title: "Mode-by-mode Relative Binning"
+version: 1.0
+date-released: 2021-11-29
