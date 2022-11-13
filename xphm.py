@@ -42,26 +42,8 @@ def thetaJL_func(params):
     Computes thetaJL, the angle between the total angular momentum J and the initial angular momentum L0.
     params: parameter dictionary
     """
-    if params['mass_1'] < params['mass_2']:
-        temp = params['mass_1']
-        params['mass_1'] = params['mass_2']
-        params['mass_2'] = temp
-    m1 = params['mass_1']
-    m2 = params['mass_2']
-    M = m1 + m2
-    s1x = params['chi_1x']
-    s1y = params['chi_1y']
-    s1z = params['chi_1z']
-    s2x = params['chi_2x']
-    s2y = params['chi_2y']
-    s2z = params['chi_2z']
-
-    # Components in L0 frame
-    Jx = (m1/M)**2*s1x + (m2/M)**2*s2x
-    Jy = (m1/M)**2*s1y + (m2/M)**2*s2y
-    Jz = (m1/M)**2*s1z + (m2/M)**2*s2z + L0_func(params)
-    J = np.array([Jx, Jy, Jz])
-
+    J = J_from_params(params)
+    Jz = J[2]
     return np.arccos(Jz/np.linalg.norm(J))
 
 def phiJL_func(params):
@@ -69,6 +51,16 @@ def phiJL_func(params):
     Computes phiJL, the azimuthal angle of the total angular momentum J in the L0 frame.
     params: parameter dictionary
     """
+    Jx, Jy, _ = J_from_params(params)
+    return np.arctan2(Jy, Jx)
+
+
+def phi_theta_from_J(Jx, Jy, Jz):
+    norm = (Jx**2 + Jy**2 + Jz**2)**0.5
+    return np.arctan2(Jy, Jx), np.arccos(Jz / norm)
+
+
+def J_from_params(params):
     if params['mass_1'] < params['mass_2']:
         temp = params['mass_1']
         params['mass_1'] = params['mass_2']
@@ -88,8 +80,8 @@ def phiJL_func(params):
     Jy = (m1/M)**2*s1y + (m2/M)**2*s2y
     Jz = (m1/M)**2*s1z + (m2/M)**2*s2z + L0_func(params)
     J = np.array([Jx, Jy, Jz])
+    return J
 
-    return np.arctan2(Jy, Jx)
 
 def rotate_z(V, theta):
     """
@@ -122,19 +114,6 @@ def zeta_polarization(params):
     Computes zeta, the polarization angle between the N frame where the x axis is aligned with L0's projection into the x-y plane and the spherical harmonic N frame where the y axis is aligned with J x N. This angle is needed to rotate the mode decomposition that we computed in the J frame into the frame aligned with L0 that convention dictates.
     params: parameter dictionary
     """
-    if params['mass_1'] < params['mass_2']:
-        temp = params['mass_1']
-        params['mass_1'] = params['mass_2']
-        params['mass_2'] = temp
-    m1 = params['mass_1']
-    m2 = params['mass_2']
-    M = m1 + m2
-    s1x = params['chi_1x']
-    s1y = params['chi_1y']
-    s1z = params['chi_1z']
-    s2x = params['chi_2x']
-    s2y = params['chi_2y']
-    s2z = params['chi_2z']
     thetaJN = params['thetaJN']
     kappa = params['kappa']
     thetaJL = thetaJL_func(params)
@@ -190,107 +169,8 @@ def wignerd_slow(l, m, mprime, beta):
         c = np.cos(beta/2)
         s = np.sin(beta/2)
         pf = 1
-    if l == 2:
-        if mprime == 2:
-            if m == 2:
-                f = c**4
-            elif m == 1:
-                f = 2*c**3*s
-            elif m == 0:
-                f = np.sqrt(6)*c**2*s**2
-            elif m == -1:
-                f = 2*c*s**3
-            elif m == -2:
-                f = s**4
-            else:
-                raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-        elif mprime == 1:
-            if m == 2:
-                f = -2*c**3*s
-            elif m == 1:
-                f = c**2*(c**2-3*s**2)
-            elif m == 0:
-                f = np.sqrt(6)*(c**3*s-c*s**3)
-            elif m == -1:
-                f = s**2*(3*c**2-s**2)
-            elif m == -2:
-                f = 2*c*s**3
-            else:
-                raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-        else:
-            raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-    elif l == 3:
-        if mprime == 3:
-            if m == 3:
-                f = c**6
-            elif m == 2:
-                f = np.sqrt(6)*c**6*s
-            elif m == 1:
-                f = np.sqrt(15)*c**4*s**2
-            elif m == 0:
-                f = 2*np.sqrt(5)*c**3*s**3
-            elif m == -1:
-                f = np.sqrt(15)*c**2*s**4
-            elif m == -2:
-                f = np.sqrt(6)*c*s**5
-            elif m == -3:
-                f = s**6
-            else:
-                raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-        elif mprime == 2:
-            if m == 3:
-                f = -np.sqrt(6)*c**5*s
-            elif m == 2:
-                f = c**4*(c**2-5*s**2)
-            elif m == 1:
-                f = np.sqrt(10)*c**3*(c**2*s-2*s**3)
-            elif m == 0:
-                f = np.sqrt(30)*c**2*s**2*(c**2-s**2)
-            elif m == -1:
-                f = np.sqrt(10)*s**3*(2*c**3-c*s**2)
-            elif m == -2:
-                f = s**4*(5*c**2-s**2)
-            elif m == -3:
-                f = np.sqrt(6)*c*s**5
-            else:
-                raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-        elif mprime == 1:
-            f = 0
-        else:
-            raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-    elif l == 4:
-        if mprime == 4:
-            if m == 4:
-                f = c**8
-            elif m == 3:
-                f = 2*np.sqrt(2)*c**7*s
-            elif m == 2:
-                f = 2*np.sqrt(7)*c**6*s**2
-            elif m == 1:
-                f = 2*np.sqrt(14)*c**5*s**3
-            elif m == 0:
-                f = np.sqrt(70)*c**4*s**4
-            elif m == -1:
-                f = 2*np.sqrt(14)*c**3*s**5
-            elif m == -2:
-                f = 2*np.sqrt(7)*c**2*s**6
-            elif m == -3:
-                f = 2*np.sqrt(2)*c*s**7
-            elif m == -4:
-                f = s**8
-            else:
-                raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-        elif mprime == 3:
-            f = 0
-        elif mprime == 2:
-            f = 0
-        elif mprime == 1:
-            f = 0
-        else:
-            raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-    else:
-        raise ValueError('Function wignerd not defined for (l, m, m\')=', l, m, mprime)
-    return f*pf
+    return _wigner(l, m, mprime, c, s, pf)
+
 
 def wignerd(l, m, mprime, eibetaover2):
     """
@@ -309,6 +189,10 @@ def wignerd(l, m, mprime, eibetaover2):
         c = np.real(eibetaover2)
         s = np.imag(eibetaover2)
         pf = 1
+    return _wigner(l, m, mprime, c, s, pf)
+
+
+def _wigner(l, m, mprime, c, s, pf):
     if l == 2:
         if mprime == 2:
             if m == 2:
@@ -423,6 +307,7 @@ def Atransfer_slow(l, m, mprime, alpha, beta, thetaJN):
     """
     return np.exp(-1j*m*alpha)*wignerd_slow(l, m, mprime, beta)*m2Ylm(l, m, thetaJN)
 
+
 def Atransfer(l, m, mprime, eiabsmalpha, eibetaover2, thetaJN):
     """
     Computes the mode-by-mode transfer function A defined in equation 3.7 of https://arxiv.org/pdf/2004.06503.pdf.
@@ -434,9 +319,9 @@ def Atransfer(l, m, mprime, eiabsmalpha, eibetaover2, thetaJN):
     thetaJN: angle thetaJN
     """
     if m > 0:
-        return np.conj(eiabsmalpha)*wignerd(l, m, mprime, eibetaover2)*m2Ylm(l, m, thetaJN)
-    else:
-        return eiabsmalpha*wignerd(l, m, mprime, eibetaover2)*m2Ylm(l, m, thetaJN)
+        eiabsmalpha = np.conj(eiabsmalpha)
+    return np.conj(eiabsmalpha)*wignerd(l, m, mprime, eibetaover2)*m2Ylm(l, m, thetaJN)
+
 
 def twist_factor_slow(l, mprime, alpha, beta, gamma, thetaJN, pol):
     """
@@ -458,6 +343,7 @@ def twist_factor_slow(l, mprime, alpha, beta, gamma, thetaJN, pol):
     else:
         raise ValueError('Only + or x polarizations allowed.')
     return np.exp(1j*mprime*gamma)*np.sum(summand, axis=0)
+
 
 def twist_factor(l, mprime, eimalpha, eibetaover2, eimprimegamma, thetaJN, pol):
     """
@@ -566,50 +452,6 @@ def hpc_slow(params, f_seq, backupNNLO = True, modelist = np.array([[2,1], [2,2]
     hcross = np.cos(2*zeta)*hcross_J - np.sin(2*zeta)*hplus_J
     return hplus, hcross
 
-# def create_cosmalpha_arr(cosalpha, max_l):
-#     if max_l == 2:
-#         return np.array([0*cosalpha+1, cosalpha, 2*cosalpha*cosalpha - 1])
-#     elif max_l == 3:
-#         cosalpha2 = cosalpha*cosalpha
-#         return np.array([0*cosalpha+1, cosalpha, 2*cosalpha2 - 1, 4*cosalpha2*cosalpha - 3*cosalpha])
-#     elif max_l == 4:
-#         cosalpha2 = cosalpha*cosalpha
-#         return np.array([0*cosalpha+1, cosalpha, 2*cosalpha2 - 1, 4*cosalpha2*cosalpha - 3*cosalpha, 8*cosalpha2*cosalpha2 - 8*cosalpha2 + 1])
-#     else:
-#         raise ValueError('This code currently only supports modes up to mprime=4, l=4 and requires the quadrupole mode.')
-        
-# def cosntheta(costheta, n):
-#     if n == 0:
-#         return 0*costheta + 1
-#     elif n == 1:
-#         return costheta
-#     elif n == 2:
-#         return 2*costheta*costheta - 1
-#     elif n == 3:
-#         costheta2 = costheta*costheta
-#         return 4*costheta2*costheta - 3*costheta
-#     elif n == 4:
-#         costheta2 = costheta*costheta
-#         return 8*costheta2*costheta2 - 8*costheta2 + 1
-        
-# def create_cosmprimegamma_arr(cosgamma, mprime_arr):
-#     return np.array([cosntheta(cosgamma[i], mprime_arr[i]) for i in range(len(mprime_arr))])
-
-# def sinfromthetacos(theta, costheta):
-#     thetam2pi = theta % (2*np.pi)
-#     return np.where(thetam2pi < np.pi, np.sqrt(1-costheta*costheta), -np.sqrt(1-costheta*costheta))
-# #     if thetam2pi < np.pi:
-# #         return np.sqrt(1-costheta*costheta)
-# #     else:
-# #         return -np.sqrt(1-costheta*costheta)
-    
-# def cosfromthetasin(theta, sintheta):
-#     thetampiover2m2pi = (theta-np.pi/2) % (2*np.pi)
-#     return np.where(thetampiover2m2pi < np.pi, -np.sqrt(1-sintheta*sintheta), np.sqrt(1-sintheta*sintheta))
-# #     if thetampiover2m2pi < np.pi:
-# #         return -np.sqrt(1-sintheta*sintheta)
-# #     else:
-# #         return np.sqrt(1-sintheta*sintheta)
 
 def create_eimalpha(alpha, max_l):
     eialpha = np.exp(1j*alpha)
@@ -721,6 +563,7 @@ def hpc_component_fast(params, f_seq, l, mprime, backupNNLO = True):
     hcross = np.cos(2*zeta)*hcross_J - np.sin(2*zeta)*hplus_J
     return hplus, hcross
 
+
 def lal_hpc(params, f_seq):
     """
     Computes the plus and cross polarizations for the parameters in the dict params at the frequencies in f_seq by calling lal for the polarizations directly.
@@ -748,10 +591,10 @@ def lal_hpc(params, f_seq):
         + [lal_pars, lalsim.GetApproximantFromString("IMRPhenomXPHM"), f_seq]
 
     # Generate hplus, hcross
-    hplus, hcross = lalsim.SimInspiralChooseFDWaveformSequence(
-        *wfparams)
+    hplus, hcross = lalsim.SimInspiralChooseFDWaveformSequence(*wfparams)
 
     return hplus.data.data, hcross.data.data
+
 
 def compute_response_coeffs(params, detstrings = ['H1', 'L1', 'V1']):
     """
@@ -764,10 +607,6 @@ def compute_response_coeffs(params, detstrings = ['H1', 'L1', 'V1']):
     psi = params['psi']
     tgps = params['tgps']
 
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
     ndet = len(detstrings)
     
     det_response = [lal.CachedDetectors[DET_CODE[det_name]].response
@@ -786,12 +625,60 @@ def compute_response_coeffs(params, detstrings = ['H1', 'L1', 'V1']):
     Fplus = np.zeros(ndet)
     Fcross = np.zeros(ndet)
     for i_det in range(ndet):
-        for i in range(3):
-            for j in range(3):
-                Fplus[i_det] += X[j]*det_response[i_det][j][i]*X[i] - Y[j]*det_response[i_det][j][i]*Y[i]
-                Fcross[i_det] += X[j]*det_response[i_det][j][i]*Y[i] + Y[j]*det_response[i_det][j][i]*X[i]
-                
+        Fplus[i_det] = X @ det_response[i_det] @ X - Y @ det_response[i_det] @ Y
+        Fcross[i_det] = X @ det_response[i_det] @ Y + Y @ det_response[i_det] @ X
+
+    # (detector)       
     return Fplus, Fcross
+
+
+def compute_time_delay(params, detstrings):
+    ra = params['ra']
+    dec = params['dec']
+    tgps = params['tgps']
+
+    ndet = len(detstrings)
+    i_refdet = reference_detector_index(detstrings)
+
+    det_location = [lal.CachedDetectors[DET_CODE[det_name]].location
+                                 for det_name in detstrings]
+
+    gmst = lal.GreenwichMeanSiderealTime(tgps)
+    gha = gmst - ra
+    esrc = np.array([np.cos(dec)*np.cos(gha), -np.cos(dec)*np.sin(gha), np.sin(dec)])
+
+    time_delay_offset = np.array([-np.dot(esrc, det_location[i_det]) / lal.C_SI for i_det in range(ndet)])
+    time_delay_offset_refdet = time_delay_offset[i_refdet]
+
+    # (detector)
+    return time_delay_offset - time_delay_offset_refdet
+
+
+def compute_time_delay_factor(params, f_seq, detstrings):
+    tc = params['tc']
+    tcoarse = params['tcoarse']
+
+    time_delay = compute_time_delay(params, detstrings)
+    time_delay_factor = np.exp(
+        -2j * np.pi * f_seq.data
+        * (tcoarse + tc + time_delay[:, np.newaxis])
+    )
+    # (detector, frequency)
+    return time_delay_factor
+
+
+def reference_detector_index(detstrings):
+    for name in ["L1", "H1", "V1"]:
+        if name in detstrings:
+            return detstrings.index(name)
+    raise ValueError("Detectors must include H1, L1, or V1")
+
+
+DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
+            'L1': lal.LLO_4K_DETECTOR,
+            'V1': lal.VIRGO_DETECTOR}
+
+
 
 def compute_strain(params, f_seq, backupNNLO = True, modelist = np.array([[2,1], [2,2], [3,2], [3,3], [4,4]]), uselal = False, detstrings = ['H1', 'L1', 'V1']):
     """
@@ -810,47 +697,14 @@ def compute_strain(params, f_seq, backupNNLO = True, modelist = np.array([[2,1],
             hplus, hcross = lal_hpc(add_op(params), f_seq)
     else:        
         hplus, hcross = hpc(params, f_seq, backupNNLO, modelist)
-    ra = params['ra']
-    dec = params['dec']
-    tgps = params['tgps']
-    tc = params['tc']
-    tcoarse = params['tcoarse']
 
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
-    ndet = len(detstrings)
-    try:
-        i_refdet = detstrings.index('L1') # Livingston is the reference detector
-    except:
-        try:
-            i_refdet = detstrings.index('H1') # If no Livingston, Hanford is the reference detector
-        except:
-            try:
-                i_refdet = detstrings.index('V1') # If no Livingston or Hanford, Virgo is the reference detector
-            except:
-                raise ValueError('detstring must contain H1, L1, or V1')
-
-    det_location = [lal.CachedDetectors[DET_CODE[det_name]].location
-                                 for det_name in detstrings]
-
-    gmst = lal.GreenwichMeanSiderealTime(tgps)
-    gha = gmst - ra
-    esrc = np.array([np.cos(dec)*np.cos(gha), -np.cos(dec)*np.sin(gha), np.sin(dec)])
-
-    time_delay_offset = np.array([-np.dot(esrc, det_location[i_det]) / lal.C_SI for i_det in range(ndet)])
-    time_delay_offset_refdet = time_delay_offset[i_refdet]
-
-    time_delay = time_delay_offset - time_delay_offset_refdet
-    
+    time_delay_factor = compute_time_delay_factor(params, f_seq, detstrings)
     Fplus, Fcross = compute_response_coeffs(params, detstrings)
     
-    # Detector strain
+    # (detector, frequency)
     return ((Fplus[:, np.newaxis] * hplus
              + Fcross[:, np.newaxis] * hcross)
-            * np.exp(-2j * np.pi * f_seq.data
-                     * (tcoarse + tc + time_delay[:, np.newaxis])))
+            * time_delay_factor)
 
 
 def compute_strain_component(params, f_seq, l, mprime, backupNNLO = True, detstrings = ['H1', 'L1', 'V1']):
@@ -865,63 +719,15 @@ def compute_strain_component(params, f_seq, l, mprime, backupNNLO = True, detstr
     detstrings: an array of strings specifying the detectors to use in the analysis: H1: LIGO Hanford, L1: LIGO Livingston, V1: Virgo, uses all by default
     """
     hplus, hcross = hpc_component(params, f_seq, l, mprime, backupNNLO)
-    ra = params['ra']
-    dec = params['dec']
-    psi = params['psi']
-    tgps = params['tgps']
-    tc = params['tc']
-    tcoarse = params['tcoarse']
 
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
-    ndet = len(detstrings)
-    try:
-        i_refdet = detstrings.index('L1') # Livingston is the reference detector
-    except:
-        try:
-            i_refdet = detstrings.index('H1') # If no Livingston, Hanford is the reference detector
-        except:
-            try:
-                i_refdet = detstrings.index('V1') # If no Livingston or Hanford, Virgo is the reference detector
-            except:
-                raise ValueError('detstring must contain H1, L1, or V1')
-
-    det_location = [lal.CachedDetectors[DET_CODE[det_name]].location
-                                 for det_name in detstrings]
-    det_response = [lal.CachedDetectors[DET_CODE[det_name]].response
-                                 for det_name in detstrings]
-
-    gmst = lal.GreenwichMeanSiderealTime(tgps)
-    gha = gmst - ra
-    esrc = np.array([np.cos(dec)*np.cos(gha), -np.cos(dec)*np.sin(gha), np.sin(dec)])
-
-    time_delay_offset = np.array([-np.dot(esrc, det_location[i_det]) / lal.C_SI for i_det in range(ndet)])
-    time_delay_offset_refdet = time_delay_offset[i_refdet]
-
-    time_delay = time_delay_offset - time_delay_offset_refdet
-
-    X = np.array([-np.cos(psi)*np.sin(gha)-np.sin(psi)*np.cos(gha)*np.sin(dec),
-                 -np.cos(psi)*np.cos(gha)+np.sin(psi)*np.sin(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(dec)])
-    Y = np.array([np.sin(psi)*np.sin(gha)-np.cos(psi)*np.cos(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(gha)+np.cos(psi)*np.sin(gha)*np.sin(dec),
-                 np.cos(psi)*np.cos(dec)])
-
-    Fplus = np.zeros(ndet)
-    Fcross = np.zeros(ndet)
-    for i_det in range(ndet):
-        for i in range(3):
-            for j in range(3):
-                Fplus[i_det] += X[j]*det_response[i_det][j][i]*X[i] - Y[j]*det_response[i_det][j][i]*Y[i]
-                Fcross[i_det] += X[j]*det_response[i_det][j][i]*Y[i] + Y[j]*det_response[i_det][j][i]*X[i]
+    time_delay_factor = compute_time_delay_factor(params, f_seq, detstrings)
+    Fplus, Fcross = compute_response_coeffs(params, detstrings)
     
     # Detector strain
     return ((Fplus[:, np.newaxis] * hplus
              + Fcross[:, np.newaxis] * hcross)
-            * np.exp(-2j * np.pi * f_seq.data
-                     * (tcoarse + tc + time_delay[:, np.newaxis])))
+            * time_delay_factor)
+
 
 def compute_strain_components(params, f_seq, backupNNLO = True, modelist = np.array([[2,1], [2,2], [3,2], [3,3], [4,4]]), detstrings = ['H1', 'L1', 'V1']):
     """
@@ -934,63 +740,15 @@ def compute_strain_components(params, f_seq, backupNNLO = True, modelist = np.ar
     detstrings: an array of strings specifying the detectors to use in the analysis: H1: LIGO Hanford, L1: LIGO Livingston, V1: Virgo, uses all by default
     """
     hpc = np.array([hpc_component(params, f_seq, mode[0], mode[1], backupNNLO) for mode in modelist])
-    ra = params['ra']
-    dec = params['dec']
-    psi = params['psi']
-    tgps = params['tgps']
-    tc = params['tc']
-    tcoarse = params['tcoarse']
 
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
-    ndet = len(detstrings)
-    try:
-        i_refdet = detstrings.index('L1') # Livingston is the reference detector
-    except:
-        try:
-            i_refdet = detstrings.index('H1') # If no Livingston, Hanford is the reference detector
-        except:
-            try:
-                i_refdet = detstrings.index('V1') # If no Livingston or Hanford, Virgo is the reference detector
-            except:
-                raise ValueError('detstring must contain H1, L1, or V1')
-
-    det_location = [lal.CachedDetectors[DET_CODE[det_name]].location
-                                 for det_name in detstrings]
-    det_response = [lal.CachedDetectors[DET_CODE[det_name]].response
-                                 for det_name in detstrings]
-    
-    gmst = lal.GreenwichMeanSiderealTime(tgps)
-    gha = gmst - ra
-    esrc = np.array([np.cos(dec)*np.cos(gha), -np.cos(dec)*np.sin(gha), np.sin(dec)])
-
-    time_delay_offset = np.array([-np.dot(esrc, det_location[i_det]) / lal.C_SI for i_det in range(ndet)])
-    time_delay_offset_refdet = time_delay_offset[i_refdet]
-
-    time_delay = time_delay_offset - time_delay_offset_refdet
-
-    X = np.array([-np.cos(psi)*np.sin(gha)-np.sin(psi)*np.cos(gha)*np.sin(dec),
-                 -np.cos(psi)*np.cos(gha)+np.sin(psi)*np.sin(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(dec)])
-    Y = np.array([np.sin(psi)*np.sin(gha)-np.cos(psi)*np.cos(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(gha)+np.cos(psi)*np.sin(gha)*np.sin(dec),
-                 np.cos(psi)*np.cos(dec)])
-
-    Fplus = np.zeros(ndet)
-    Fcross = np.zeros(ndet)
-    for i_det in range(ndet):
-        for i in range(3):
-            for j in range(3):
-                Fplus[i_det] += X[j]*det_response[i_det][j][i]*X[i] - Y[j]*det_response[i_det][j][i]*Y[i]
-                Fcross[i_det] += X[j]*det_response[i_det][j][i]*Y[i] + Y[j]*det_response[i_det][j][i]*X[i]
+    time_delay_factor = compute_time_delay_factor(params, f_seq, detstrings)
+    Fplus, Fcross = compute_response_coeffs(params, detstrings)
     
     # (detector, mode, frequency)
     return ((Fplus[:, np.newaxis, np.newaxis] * hpc[np.newaxis, :, 0, :]
              + Fcross[:, np.newaxis, np.newaxis] * hpc[np.newaxis, :, 1, :])
-            * np.exp(-2j * np.pi * f_seq.data[np.newaxis, np.newaxis, :]
-                     * (tcoarse + tc + time_delay[:, np.newaxis, np.newaxis])))
+            *  time_delay_factor[:, np.newaxis, :])
+
 
 def compute_old_C_prefactor(params, f_seq, l, mprime, backupNNLO = True, detstrings = ['H1', 'L1', 'V1']):
     """
@@ -1003,71 +761,13 @@ def compute_old_C_prefactor(params, f_seq, l, mprime, backupNNLO = True, detstri
                          if False: raises an error if the MSA prescription fails
     detstrings: an array of strings specifying the detectors to use in the analysis: H1: LIGO Hanford, L1: LIGO Livingston, V1: Virgo, uses all by default
     """
-    thetaJN = params['thetaJN']
-    n_freq = len(f_seq.data)
-    eulerangles = euler_angles(params, f_seq, mprime, backupNNLO)
-    Cplus_J = 1/2*twist_factor_slow(l, mprime, eulerangles[0], eulerangles[1], eulerangles[2], thetaJN, '+')
-    Ccross_J = 1j/2*twist_factor_slow(l, mprime, eulerangles[0], eulerangles[1], eulerangles[2], thetaJN, 'x')
-    zeta = zeta_polarization(params)
-    Cplus = np.cos(2*zeta)*Cplus_J + np.sin(2*zeta)*Ccross_J
-    Ccross = np.cos(2*zeta)*Ccross_J - np.sin(2*zeta)*Cplus_J
-    ra = params['ra']
-    dec = params['dec']
-    psi = params['psi']
-    tgps = params['tgps']
-    tc = params['tc']
-    tcoarse = params['tcoarse']
+    new_C_prefactor = compute_C_prefactor(params, f_seq, l, mprime, backupNNLO, detstrings)
 
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
-    ndet = len(detstrings)
-    try:
-        i_refdet = detstrings.index('L1') # Livingston is the reference detector
-    except:
-        try:
-            i_refdet = detstrings.index('H1') # If no Livingston, Hanford is the reference detector
-        except:
-            try:
-                i_refdet = detstrings.index('V1') # If no Livingston or Hanford, Virgo is the reference detector
-            except:
-                raise ValueError('detstring must contain H1, L1, or V1')
-
-    det_location = [lal.CachedDetectors[DET_CODE[det_name]].location
-                                 for det_name in detstrings]
-    det_response = [lal.CachedDetectors[DET_CODE[det_name]].response
-                                 for det_name in detstrings]
-
-    gmst = lal.GreenwichMeanSiderealTime(tgps)
-    gha = gmst - ra
-    esrc = np.array([np.cos(dec)*np.cos(gha), -np.cos(dec)*np.sin(gha), np.sin(dec)])
-
-    time_delay_offset = np.array([-np.dot(esrc, det_location[i_det]) / lal.C_SI for i_det in range(ndet)])
-    time_delay_offset_refdet = time_delay_offset[i_refdet]
-
-    time_delay = time_delay_offset - time_delay_offset_refdet
-
-    X = np.array([-np.cos(psi)*np.sin(gha)-np.sin(psi)*np.cos(gha)*np.sin(dec),
-                 -np.cos(psi)*np.cos(gha)+np.sin(psi)*np.sin(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(dec)])
-    Y = np.array([np.sin(psi)*np.sin(gha)-np.cos(psi)*np.cos(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(gha)+np.cos(psi)*np.sin(gha)*np.sin(dec),
-                 np.cos(psi)*np.cos(dec)])
-
-    Fplus = np.zeros(ndet)
-    Fcross = np.zeros(ndet)
-    for i_det in range(ndet):
-        for i in range(3):
-            for j in range(3):
-                Fplus[i_det] += X[j]*det_response[i_det][j][i]*X[i] - Y[j]*det_response[i_det][j][i]*Y[i]
-                Fcross[i_det] += X[j]*det_response[i_det][j][i]*Y[i] + Y[j]*det_response[i_det][j][i]*X[i]
+    time_delay_factor = compute_time_delay_factor(params, f_seq, detstrings)
     
     # (detector, frequency)
-    return ((Fplus[:, np.newaxis] * Cplus
-             + Fcross[:, np.newaxis] * Ccross)
-            * np.exp(-2j * np.pi * f_seq.data
-                     * (tcoarse + tc + time_delay[:, np.newaxis])))
+    return new_C_prefactor * time_delay_factor
+
 
 def compute_C_prefactor(params, f_seq, l, mprime, backupNNLO = True, detstrings = ['H1', 'L1', 'V1']):
     """
@@ -1083,56 +783,18 @@ def compute_C_prefactor(params, f_seq, l, mprime, backupNNLO = True, detstrings 
     thetaJN = params['thetaJN']
     n_freq = len(f_seq.data)
     eulerangles = euler_angles(params, f_seq, mprime, backupNNLO)
-    Cplus_J = 1/2*twist_factor_slow(l, mprime, eulerangles[0], eulerangles[1], eulerangles[2], thetaJN, '+')
-    Ccross_J = 1j/2*twist_factor_slow(l, mprime, eulerangles[0], eulerangles[1], eulerangles[2], thetaJN, 'x')
+    Cplus_J = 1/2*twist_factor_slow(l, mprime, *eulerangles, thetaJN, '+')
+    Ccross_J = 1j/2*twist_factor_slow(l, mprime, *eulerangles, thetaJN, 'x')
     zeta = zeta_polarization(params)
     Cplus = np.cos(2*zeta)*Cplus_J + np.sin(2*zeta)*Ccross_J
     Ccross = np.cos(2*zeta)*Ccross_J - np.sin(2*zeta)*Cplus_J
-    ra = params['ra']
-    dec = params['dec']
-    psi = params['psi']
-    tgps = params['tgps']
 
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
-    ndet = len(detstrings)
-    try:
-        i_refdet = detstrings.index('L1') # Livingston is the reference detector
-    except:
-        try:
-            i_refdet = detstrings.index('H1') # If no Livingston, Hanford is the reference detector
-        except:
-            try:
-                i_refdet = detstrings.index('V1') # If no Livingston or Hanford, Virgo is the reference detector
-            except:
-                raise ValueError('detstring must contain H1, L1, or V1')
-
-    det_response = [lal.CachedDetectors[DET_CODE[det_name]].response
-                                 for det_name in detstrings]
-
-    gmst = lal.GreenwichMeanSiderealTime(tgps)
-    gha = gmst - ra
-
-    X = np.array([-np.cos(psi)*np.sin(gha)-np.sin(psi)*np.cos(gha)*np.sin(dec),
-                 -np.cos(psi)*np.cos(gha)+np.sin(psi)*np.sin(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(dec)])
-    Y = np.array([np.sin(psi)*np.sin(gha)-np.cos(psi)*np.cos(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(gha)+np.cos(psi)*np.sin(gha)*np.sin(dec),
-                 np.cos(psi)*np.cos(dec)])
-
-    Fplus = np.zeros(ndet)
-    Fcross = np.zeros(ndet)
-    for i_det in range(ndet):
-        for i in range(3):
-            for j in range(3):
-                Fplus[i_det] += X[j]*det_response[i_det][j][i]*X[i] - Y[j]*det_response[i_det][j][i]*Y[i]
-                Fcross[i_det] += X[j]*det_response[i_det][j][i]*Y[i] + Y[j]*det_response[i_det][j][i]*X[i]
+    Fplus, Fcross = compute_response_coeffs(params, detstrings)
     
     # (detector, frequency)
     return (Fplus[:, np.newaxis] * Cplus
              + Fcross[:, np.newaxis] * Ccross)
+
 
 def compute_td_L_frame_mode(params, f_seq, l, mprime, detstrings = ['H1', 'L1', 'V1']):
     """
@@ -1144,45 +806,13 @@ def compute_td_L_frame_mode(params, f_seq, l, mprime, detstrings = ['H1', 'L1', 
     detstrings: an array of strings specifying the detectors to use in the analysis: H1: LIGO Hanford, L1: LIGO Livingston, V1: Virgo, uses all by default
     """
     hL = h_Lframe(params, f_seq, l, -mprime)
-    ra = params['ra']
-    dec = params['dec']
-    psi = params['psi']
-    tgps = params['tgps']
-    tc = params['tc']
-    tcoarse = params['tcoarse']
 
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
-    ndet = len(detstrings)
-    try:
-        i_refdet = detstrings.index('L1') # Livingston is the reference detector
-    except:
-        try:
-            i_refdet = detstrings.index('H1') # If no Livingston, Hanford is the reference detector
-        except:
-            try:
-                i_refdet = detstrings.index('V1') # If no Livingston or Hanford, Virgo is the reference detector
-            except:
-                raise ValueError('detstring must contain H1, L1, or V1')
-
-    det_location = [lal.CachedDetectors[DET_CODE[det_name]].location
-                                 for det_name in detstrings]
-
-    gmst = lal.GreenwichMeanSiderealTime(tgps)
-    gha = gmst - ra
-    esrc = np.array([np.cos(dec)*np.cos(gha), -np.cos(dec)*np.sin(gha), np.sin(dec)])
-
-    time_delay_offset = np.array([-np.dot(esrc, det_location[i_det]) / lal.C_SI for i_det in range(ndet)])
-    time_delay_offset_refdet = time_delay_offset[i_refdet]
-
-    time_delay = time_delay_offset - time_delay_offset_refdet
+    time_delay_factor = compute_time_delay_factor(params, f_seq, detstrings)
     
     # (detector, frequency)
-    return hL * np.exp(-2j * np.pi * f_seq.data
-                     * (tcoarse + tc + time_delay[:, np.newaxis]))
-   
+    return hL * time_delay_factor
+
+
 def compute_C_prefactors(params, f_seq, modelist = np.array([[2,1], [2,2], [3,2], [3,3], [4,4]]), backupNNLO = True, detstrings = ['H1', 'L1', 'V1']):
     """
     Computes all prefactors of the time-dependent L frame modes of the strain in the detectors in detstrings for the parameters in the dict params at the frequencies in f_seq.
@@ -1196,58 +826,19 @@ def compute_C_prefactors(params, f_seq, modelist = np.array([[2,1], [2,2], [3,2]
     thetaJN = params['thetaJN']
     n_freq = len(f_seq.data)
     eulerangles = np.array([euler_angles(params, f_seq, mode[1], backupNNLO) for mode in modelist])
-    Cplus_J = np.array([1/2*twist_factor_slow(modelist[i,0], modelist[i,1], eulerangles[i, 0], eulerangles[i, 1], eulerangles[i, 2], thetaJN, '+') for i in range(modelist.shape[0])])
-    Ccross_J = np.array([1j/2*twist_factor_slow(modelist[i,0], modelist[i,1], eulerangles[i, 0], eulerangles[i, 1], eulerangles[i, 2], thetaJN, 'x') for i in range(modelist.shape[0])])
+    Cplus_J = np.array([1/2*twist_factor_slow(modelist[i,0], modelist[i,1], *eulerangles[i], thetaJN, '+') for i in range(modelist.shape[0])])
+    Ccross_J = np.array([1j/2*twist_factor_slow(modelist[i,0], modelist[i,1], *eulerangles[i], thetaJN, 'x') for i in range(modelist.shape[0])])
     zeta = zeta_polarization(params)
     Cplus = np.cos(2*zeta)*Cplus_J + np.sin(2*zeta)*Ccross_J
     Ccross = np.cos(2*zeta)*Ccross_J - np.sin(2*zeta)*Cplus_J
-    ra = params['ra']
-    dec = params['dec']
-    psi = params['psi']
-    tgps = params['tgps']
 
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
-    ndet = len(detstrings)
-    try:
-        i_refdet = detstrings.index('L1') # Livingston is the reference detector
-    except:
-        try:
-            i_refdet = detstrings.index('H1') # If no Livingston, Hanford is the reference detector
-        except:
-            try:
-                i_refdet = detstrings.index('V1') # If no Livingston or Hanford, Virgo is the reference detector
-            except:
-                raise ValueError('detstring must contain H1, L1, or V1')
-
-    det_response = [lal.CachedDetectors[DET_CODE[det_name]].response
-                                 for det_name in detstrings]
-
-    gmst = lal.GreenwichMeanSiderealTime(tgps)
-    gha = gmst - ra
-
-    X = np.array([-np.cos(psi)*np.sin(gha)-np.sin(psi)*np.cos(gha)*np.sin(dec),
-                 -np.cos(psi)*np.cos(gha)+np.sin(psi)*np.sin(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(dec)])
-    Y = np.array([np.sin(psi)*np.sin(gha)-np.cos(psi)*np.cos(gha)*np.sin(dec),
-                 np.sin(psi)*np.cos(gha)+np.cos(psi)*np.sin(gha)*np.sin(dec),
-                 np.cos(psi)*np.cos(dec)])
-
-    Fplus = np.zeros(ndet)
-    Fcross = np.zeros(ndet)
-    for i_det in range(ndet):
-        for i in range(3):
-            for j in range(3):
-                Fplus[i_det] += X[j]*det_response[i_det][j][i]*X[i] - Y[j]*det_response[i_det][j][i]*Y[i]
-                Fcross[i_det] += X[j]*det_response[i_det][j][i]*Y[i] + Y[j]*det_response[i_det][j][i]*X[i]
+    Fplus, Fcross = compute_response_coeffs(params, detstrings)
     
     # (detector, mode, frequency)
     return (Fplus[:, np.newaxis, np.newaxis] * Cplus[np.newaxis, :, :]
              + Fcross[:, np.newaxis, np.newaxis] * Ccross[np.newaxis, :, :])
-    
-    
+
+
 def compute_td_L_frame_modes(params, f_seq, modelist = np.array([[2,1], [2,2], [3,2], [3,3], [4,4]]), detstrings = ['H1', 'L1', 'V1']):
     """
     Computes all time-dependent L frame modes of the strain in the detectors in detstrings for the parameters in the dict params at the frequencies in f_seq.
@@ -1257,186 +848,25 @@ def compute_td_L_frame_modes(params, f_seq, modelist = np.array([[2,1], [2,2], [
     detstrings: an array of strings specifying the detectors to use in the analysis: H1: LIGO Hanford, L1: LIGO Livingston, V1: Virgo, uses all by default
     """
     hL = np.array([h_Lframe(params, f_seq, mode[0], -mode[1]) for mode in modelist])
-    ra = params['ra']
-    dec = params['dec']
-    psi = params['psi']
-    tgps = params['tgps']
-    tc = params['tc']
-    tcoarse = params['tcoarse']
-
-    DET_CODE = {'H1': lal.LHO_4K_DETECTOR,
-                'L1': lal.LLO_4K_DETECTOR,
-                'V1': lal.VIRGO_DETECTOR}
-    
-    ndet = len(detstrings)
-    try:
-        i_refdet = detstrings.index('L1') # Livingston is the reference detector
-    except:
-        try:
-            i_refdet = detstrings.index('H1') # If no Livingston, Hanford is the reference detector
-        except:
-            try:
-                i_refdet = detstrings.index('V1') # If no Livingston or Hanford, Virgo is the reference detector
-            except:
-                raise ValueError('detstring must contain H1, L1, or V1')
-
-    det_location = [lal.CachedDetectors[DET_CODE[det_name]].location
-                                 for det_name in detstrings]
-
-    gmst = lal.GreenwichMeanSiderealTime(tgps)
-    gha = gmst - ra
-    esrc = np.array([np.cos(dec)*np.cos(gha), -np.cos(dec)*np.sin(gha), np.sin(dec)])
-
-    time_delay_offset = np.array([-np.dot(esrc, det_location[i_det]) / lal.C_SI for i_det in range(ndet)])
-    time_delay_offset_refdet = time_delay_offset[i_refdet]
-
-    time_delay = time_delay_offset - time_delay_offset_refdet
+    time_delay_factor = compute_time_delay_factor(params, f_seq, detstrings)
     
     # (detector, mode, frequency)
-    return hL[np.newaxis, :, :] * np.exp(-2j * np.pi * f_seq.data[np.newaxis, np.newaxis, :]
-                     * (tcoarse + tc + time_delay[:, np.newaxis, np.newaxis]))
+    return hL[np.newaxis, :, :] * time_delay_factor[:, np.newaxis, :]
 
 
 # Functions for switching between new and old parameters
 
-def thetaJN_func_op(params):
-    """
-    Computes thetaJN, the angle between the total angular momentum J and the line of sight normal vector N.
-    params: parameter dictionary that has the old angle parameters iota/inclination and phiref
-    """
-    if params['mass_1'] < params['mass_2']:
-        temp = params['mass_1']
-        params['mass_1'] = params['mass_2']
-        params['mass_2'] = temp
-    m1 = params['mass_1']
-    m2 = params['mass_2']
-    M = m1 + m2
-    s1x = params['chi_1x']
-    s1y = params['chi_1y']
-    s1z = params['chi_1z']
-    s2x = params['chi_2x']
-    s2y = params['chi_2y']
-    s2z = params['chi_2z']
-    iota = params['inclination']
-    phiref = params['phi_ref']
-
-    # Components in L0 frame
-    Jx = (m1/M)**2*s1x + (m2/M)**2*s2x
-    Jy = (m1/M)**2*s1y + (m2/M)**2*s2y
-    Jz = (m1/M)**2*s1z + (m2/M)**2*s2z + L0_func(params)
-    J = np.array([Jx, Jy, Jz])
-
-    Nx = np.sin(iota)*np.cos((np.pi/2)-phiref)
-    Ny = np.sin(iota)*np.sin((np.pi/2)-phiref)
-    Nz = np.cos(iota)
-    N = np.array([Nx, Ny, Nz])
-
-    return np.arccos(np.dot(J, N)/np.linalg.norm(J))
-
-def kappa_func_op(params):
-    """
-    Computes kappa, the final Euler angle between the L0 and J frames.
-    params: parameter dictionary that has the old angle parameters iota/inclination and phiref
-    """
-    if params['mass_1'] < params['mass_2']:
-        temp = params['mass_1']
-        params['mass_1'] = params['mass_2']
-        params['mass_2'] = temp
-    iota = params['inclination']
-    phiref = params['phi_ref']
-
-    # Components in L0 frame
-    Nx = np.sin(iota)*np.cos((np.pi/2)-phiref)
-    Ny = np.sin(iota)*np.sin((np.pi/2)-phiref)
-    Nz = np.cos(iota)
-    N = np.array([Nx, Ny, Nz])
-    
-    # Rotate to J prime frame
-    phiJL = phiJL_func(params)
-    thetaJL = thetaJL_func(params)
-    N_Jp = rotate_y(rotate_z(N, -phiJL), -thetaJL)
-    Nx_Jp = N_Jp[0]
-    Ny_Jp = N_Jp[1]
-    
-    return np.arctan2(Ny_Jp, Nx_Jp)
-
-def iota_func_np(params):
-    """
-    Computes iota, the angle between initial angular momentum L0 and the line of sight normal vector N.
-    params: parameter dictionary that has the new angle parameters thetaJN and kappa
-    """
-    if params['mass_1'] < params['mass_2']:
-        temp = params['mass_1']
-        params['mass_1'] = params['mass_2']
-        params['mass_2'] = temp
-    thetaJN = params['thetaJN']
-    kappa = params['kappa']
-    
-    # Components in J frame
-    Nx = np.sin(thetaJN)
-    # Ny = 0
-    Nz = np.cos(thetaJN)
-    N = np.array([Nx, 0, Nz])
-    
-    # Rotate to L0 frame
-    phiJL = phiJL_func(params)
-    thetaJL = thetaJL_func(params)
-    NL0 = rotate_z(rotate_y(rotate_z(N, kappa), thetaJL), phiJL)
-    
-    return np.arccos(NL0[2])
-
-def phiref_func_np(params):
-    """
-    Computes phiref, the azimuthal angle of N in the L0 frame.
-    params: parameter dictionary that has the new angle parameters thetaJN and kappa
-    """
-    if params['mass_1'] < params['mass_2']:
-        temp = params['mass_1']
-        params['mass_1'] = params['mass_2']
-        params['mass_2'] = temp
-    thetaJN = params['thetaJN']
-    kappa = params['kappa']
-    
-    # Components in J frame
-    Nx = np.sin(thetaJN)
-    # Ny = 0
-    Nz = np.cos(thetaJN)
-    N = np.array([Nx, 0, Nz])
-    
-    # Rotate to L0 frame
-    phiJL = phiJL_func(params)
-    thetaJL = thetaJL_func(params)
-    NL0 = rotate_z(rotate_y(rotate_z(N, kappa), thetaJL), phiJL)
-    
-    return np.pi/2 - np.arctan2(NL0[1], NL0[0])
 
 def add_np(params):
     """
     Computes and adds the new parameters thetaJN and kappa to the parameter dictionary (given a valid parameter dictionary that has inclination (iota) and phiref)
     params: parameter dictionary that has the old angle parameters iota/inclination and phiref
     """
-    if params['mass_1'] < params['mass_2']:
-        temp = params['mass_1']
-        params['mass_1'] = params['mass_2']
-        params['mass_2'] = temp
-    m1 = params['mass_1']
-    m2 = params['mass_2']
-    M = m1 + m2
-    s1x = params['chi_1x']
-    s1y = params['chi_1y']
-    s1z = params['chi_1z']
-    s2x = params['chi_2x']
-    s2y = params['chi_2y']
-    s2z = params['chi_2z']
     iota = params['inclination']
     phiref = params['phi_ref']
 
     # Components in L0 frame
-    Jx = (m1/M)**2*s1x + (m2/M)**2*s2x
-    Jy = (m1/M)**2*s1y + (m2/M)**2*s2y
-    Jz = (m1/M)**2*s1z + (m2/M)**2*s2z + L0_func(params)
-    J = np.array([Jx, Jy, Jz])
-    
+    J = J_from_params(params)
 
     Nx = np.sin(iota)*np.cos((np.pi/2)-phiref)
     Ny = np.sin(iota)*np.sin((np.pi/2)-phiref)
@@ -1446,8 +876,7 @@ def add_np(params):
     params['thetaJN'] = np.arccos(np.dot(J, N)/np.linalg.norm(J))
     
     # Rotate N to J prime frame
-    phiJL = phiJL_func(params)
-    thetaJL = thetaJL_func(params)
+    phiJL, thetaJL = phi_theta_from_J(Jx, Jy, Jz)
     N_Jp = rotate_y(rotate_z(N, -phiJL), -thetaJL)
     Nx_Jp = N_Jp[0]
     Ny_Jp = N_Jp[1]
@@ -1461,10 +890,6 @@ def add_op(params):
     Computes and adds the old parameters inclination (iota) and phiref to the parameter dictionary (given a valid parameter dictionary that has the thetaJN and kappa).
     params: parameter dictionary that has the new angle parameters thetaJN and kappa
     """
-    if params['mass_1'] < params['mass_2']:
-        temp = params['mass_1']
-        params['mass_1'] = params['mass_2']
-        params['mass_2'] = temp
     thetaJN = params['thetaJN']
     kappa = params['kappa']
     
